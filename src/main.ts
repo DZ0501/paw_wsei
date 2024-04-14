@@ -1,24 +1,37 @@
-import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+import { loadProjects } from './projectManager';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+document.addEventListener('DOMContentLoaded', initApp);
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+function initApp() {
+    setupNavigation();
+    loadProjects();
+    console.log(`Current project ID: ${storedId}`);
+}
+
+const storedId: number = localStorage.getItem('currentProjectId') !== null ? parseInt(localStorage.getItem('currentProjectId')!) : 0;
+
+
+
+function setupNavigation() {
+    const projectListContainer = document.getElementById('container-project-list') as HTMLElement;
+    const taskListContainer = document.getElementById('container-task-list') as HTMLElement;
+
+    const taskListButton = document.getElementById('tasklist-navigation-button') as HTMLElement;
+    taskListButton.addEventListener('click', () => {
+        if (storedId) {
+            navigateTo(taskListContainer, projectListContainer);
+        } else {
+            alert("No project selected. Please select a project first.");
+        }
+    });
+
+
+
+    const projectListButton = document.getElementById('projectlist-navigation-button') as HTMLElement;
+    projectListButton.addEventListener('click', () => { navigateTo(projectListContainer, taskListContainer) });
+
+    function navigateTo(visibleContainer: HTMLElement, hiddenContainer: HTMLElement) {
+        visibleContainer.style.display = 'block';
+        hiddenContainer.style.display = 'none';
+    }
+}
