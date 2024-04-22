@@ -53,8 +53,15 @@ export class LocalStorageApi {
         this.saveProjects(filteredProjects);
     }
 
-    setCurrentProject(id: number): void {
+    getCurrentProjectId(): number {
+        const projectId: string | null = localStorage.getItem('currentProjectId');
+        console.log(`Current Project Id: ${projectId}`)
+        return projectId ? parseInt(projectId) : 0;
+    }
+
+    setCurrentProjectId(id: number): void {
         localStorage.setItem('currentProjectId', id.toString());
+        console.log(`Current Project Id: ${id}`)
     }
 
     // Tasks
@@ -94,5 +101,16 @@ export class LocalStorageApi {
 
     getTasksByProjectId(projectId: number): Task[] {
         return this.getTasks().filter(task => task.projectId === projectId);
+    }
+
+    getCurrentTaskId(): number {
+        const taskId: string | null = localStorage.getItem('currentTaskId');
+        console.log(`Current Task Id: ${taskId}`)
+        return taskId ? parseInt(taskId) : 0;
+    }
+
+    setCurrentTaskId(id: number): void {
+        localStorage.setItem('currentTaskId', id.toString());
+        console.log(`Current Task Id: ${id}`)
     }
 }

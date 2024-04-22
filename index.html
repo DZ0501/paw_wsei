@@ -13,10 +13,11 @@
     <div id="container">
         <div id="container-header">
             <h2>Project Management</h2>
-            <button id="new-project-modal-button">Add New Project</button>
+            <button id="project-new-modal-button">Add New Project</button>
+            <button id="task-new-modal-button">Add New Task</button>
         </div>
 
-        <div id="new-project-modal" class="modal">
+        <div id="project-new-modal" class="modal">
             <div class="modal-content">
                 <form id="project-form">
                     <input type="text" id="project-name" placeholder="Project Name" required>
@@ -26,13 +27,10 @@
             </div>
         </div>
 
-        <div id="container-project-list">
+        <div id="project-container-list">
         </div>
 
-        <div id="container-task-list" style="display: none;">
-            <h3>Task List</h3>
-            <button id="new-task-modal-button">Add New Task</button>
-            <div id="task-list"></div>
+        <div id="task-container-list">
         </div>
 
 
@@ -45,12 +43,42 @@
         <div id="project-update-modal" class="modal">
             <div class="modal-content">
                 <form id="project-update-form">
-                    <input type="text" id="update-project-name" placeholder="New Project Name" required>
-                    <input type="text" id="update-project-description" placeholder="New Project Description" required>
+                    <input type="text" id="project-update-name" placeholder="New Project Name" required>
+                    <input type="text" id="project-update-description" placeholder="New Project Description" required>
                     <button type="submit">Update Project</button>
                 </form>
             </div>
         </div>
+
+        <div id="task-new-modal" class="modal">
+            <div class="modal-content">
+                <form id="task-form">
+                    <input type="text" id="task-name" name="name" placeholder="Task Name" required>
+                    <textarea id="task-description" name="description" placeholder="Task Description" rows="5"
+                        required></textarea>
+                    <select id="task-priority" name="priority" required>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <button type="submit">Add Task</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="task-container-details">
+                <form id="task-details-form">
+                    <input type="text" id="task-details-name" placeholder="Task Name" required>
+                    <textarea id="task-details-description" rows="5" placeholder="Task Description" required></textarea>
+                    <select id="task-details-priority" name="priority" required>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <button type="submit">Save</button>
+                </form>
+        </div>
+
 
     </div>
     <div id="navigation">

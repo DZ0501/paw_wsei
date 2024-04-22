@@ -2,22 +2,20 @@ import { Project } from './models/project';
 import { LocalStorageApi } from './api/localStorageApi';
 
 const api = new LocalStorageApi('projects');
-export let currentProjectId: number;
 
-
-
-const newProjectButton = document.getElementById('new-project-modal-button') as HTMLElement;
-const modalNewProject = document.getElementById('new-project-modal') as HTMLElement;
+const newProjectButton = document.getElementById('project-new-modal-button') as HTMLElement;
+const modalNewProject = document.getElementById('project-new-modal') as HTMLElement;
 const modalProjectDescription = document.getElementById('project-description-modal') as HTMLElement;
 const modalProjectDescriptionContent = document.getElementById('project-description-content') as HTMLElement;
 const modalProjectUpdate = document.getElementById('project-update-modal') as HTMLElement;
-const projectListContainer = document.getElementById('container-project-list') as HTMLElement;
+const projectListContainer = document.getElementById('project-container-list') as HTMLElement;
 
 
 
 const addProjectToList = (project: Project) => {
     const listElement = document.createElement('div');
     listElement.className = 'project';
+    listElement.id = `${project.id}`
 
     const projectName = document.createElement('div');
     projectName.textContent = `${project.name} ❔`;
@@ -30,12 +28,12 @@ const addProjectToList = (project: Project) => {
     listElement.appendChild(projectName);
 
     const actionsContainer = document.createElement('div');
-    actionsContainer.className = 'container-project-list-actions';
+    actionsContainer.className = 'project-container-list-actions';
 
     const selectButton = document.createElement('button');
     selectButton.textContent = 'Select';
     selectButton.addEventListener('click', () => {
-        setCurrentProjectId(project.id);
+        setCurrentProject(project.id);
     });
 
     const updateButton = document.createElement('button');
@@ -53,7 +51,7 @@ const addProjectToList = (project: Project) => {
     actionsContainer.appendChild(deleteButton);
 
     listElement.appendChild(actionsContainer);
-    document.getElementById('container-project-list')!.appendChild(listElement);
+    document.getElementById('project-container-list')!.appendChild(listElement);
 };
 
 
@@ -73,19 +71,20 @@ document.getElementById('project-form')!.addEventListener('submit', (e) => {
 
 // existing project sumbission
 document.getElementById('project-update-form')!.addEventListener('submit', () => {
-    if (currentProjectId == 0) {
+    let currentProjectId = api.getCurrentProjectId();
+    if (currentProjectId == null) {
         alert("No project selected for update.");
         return;
     }
-    const nameInput = document.getElementById('update-project-name') as HTMLInputElement;
-    const descriptionInput = document.getElementById('update-project-description') as HTMLInputElement;
+    const nameInput = document.getElementById('project-update-name') as HTMLInputElement;
+    const descriptionInput = document.getElementById('project-update-description') as HTMLInputElement;
 
     const updatedProject = new Project(currentProjectId, nameInput.value, descriptionInput.value);
     api.updateProject(updatedProject);
 
     const updateModal = document.getElementById("project-update-modal") as HTMLElement;
     updateModal.style.display = 'none';
-    currentProjectId = 0;
+    api.setCurrentProjectId(0);
 });
 
 
@@ -111,7 +110,10 @@ window.addEventListener('click', (event) => {
 
 function deleteProject(projectId: number, listElement: HTMLElement) {
     api.deleteProject(projectId);
-    api.setCurrentProject(0);
+    const currentProjectId: number = api.getCurrentProjectId();
+    if (projectId === currentProjectId) {
+        setCurrentProject(0);
+    }
     listElement.remove();
 }
 
@@ -123,21 +125,35 @@ function showProjectDetails(project: Project) {
 }
 
 function prepareProjectUpdate(project: Project) {
-    currentProjectId = project.id;
-    const updateNameInput = document.getElementById('update-project-name') as HTMLInputElement;
-    const updateDescriptionInput = document.getElementById('update-project-description') as HTMLInputElement;
+    api.setCurrentProjectId(project.id);
+    const updateNameInput = document.getElementById('project-update-name') as HTMLInputElement;
+    const updateDescriptionInput = document.getElementById('project-update-description') as HTMLInputElement;
     updateNameInput.value = project.name;
     updateDescriptionInput.value = project.description;
     modalProjectUpdate.style.display = 'block';
 }
 
+function setCurrentProject(id: number): void {
+    api.setCurrentProjectId(id);
+    setCurrentProjectColor(id);
+}
+
+function setCurrentProjectColor(id: number): void {
+
+    const allProjects = document.querySelectorAll('.project');
+    allProjects.forEach((project) => {
+        (project as HTMLElement).style.backgroundColor = ''; 
+    });
+    
+    const selectedProject = document.getElementById(`${id}`);
+    if (selectedProject) {
+        selectedProject.style.backgroundColor = '#999999';
+    }
+}
+
 export function loadProjects() {
     const projects = api.getProjects();
     projects.forEach(addProjectToList);
+    setCurrentProjectColor(api.getCurrentProjectId());
 };
-
-export function setCurrentProjectId(id: number) {
-    api.setCurrentProject(id);
-    console.log(`Current project ID: ${id}`);
-}
 

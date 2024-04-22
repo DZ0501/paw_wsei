@@ -47,7 +47,9 @@ html {
     margin: 3vh 1%;
 }
 
-#container-project-list {
+/* PROJECTS */
+
+#project-container-list {
     height: 90%;
     width: 100%;
     overflow: scroll;
@@ -55,11 +57,12 @@ html {
     scrollbar-width: none;
 }
 
-.container-project-list::-webkit-scrollbar {
+.project-container-list::-webkit-scrollbar {
     display: none;
 }
 
-.container-project-list-actions>button {
+
+.project-container-list-actions>button {
     margin-left: 1vw;
     margin-left: 1vw;
 }
@@ -80,8 +83,79 @@ html {
     margin-left: 60px;
 }
 
+#project-form>* {
+    margin-left: 1%;
+}
+
+.project-name {
+    cursor: pointer;
+}
+
+/* TASKS */
+
+#task-container-list {
+    height: 90%;
+    width: 100%;
+    overflow: scroll;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.task-container-list::-webkit-scrollbar {
+    display: none;
+}
 
 
+.task-container-list-actions>button {
+    margin-left: 1vw;
+    margin-left: 1vw;
+}
+
+.task {
+    width: 100%;
+    height: 10%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    background-color: #c9c9c9;
+    border-bottom: solid 2px #707070;
+    border-top: solid 1px #707070;
+    cursor: pointer;
+}
+
+.task>* {
+    margin-left: 60px;
+}
+
+#task-form {
+    display: flex;
+    flex-direction: column;
+}
+
+#task-form>* {
+    margin: 1vh;
+    text-align: center;
+}
+
+#task-container-details {
+    height: 90%;
+    width: 100%;
+}
+
+#task-container-details > *
+{
+    display: flex;
+    flex-direction: column;
+}
+
+#task-details-form>* {
+    margin: 1vh;
+    text-align: center;
+}
+
+
+/* GENERAL MODALS */
 
 .modal {
     background-color: rgba(0, 0, 0, 0.4);
@@ -97,14 +171,10 @@ html {
 .modal-content {
     background-color: #fefefe;
     border: 1px solid #888;
-    margin: 20% auto;
+    margin: 15% auto;
     padding: 20px;
 }
 
-#project-form>* {
-    margin-left: 1%;
-}
-
-.project-name {
-    cursor: pointer;
+.modal::-webkit-scrollbar {
+    display: none;
 }

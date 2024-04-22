@@ -6,7 +6,7 @@ export class Task {
         public priority: 'low' | 'medium' | 'high',
         public projectId: number,
         public creationDate: Date,
-        public status: 'todo' | 'doing' | 'done',
+        public status: 'todo' | 'in progress' | 'done',
         public ownerId: number
     ) {}
 }
