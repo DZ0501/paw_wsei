@@ -1,14 +1,14 @@
 ### Użytkownicy
-- Rozbuduj model użytkownika o rolę. Możliwe role: admin, devops, developer.
-- Zamockuj listę użytkowników. Zalogowany pozostaje admin, na liście powinien być jeszcze min. jeden developer i jeden devops  
+- Rozbuduj model użytkownika o rolę. Możliwe role: admin, devops, developer. //done
+- Zamockuj listę użytkowników. Zalogowany pozostaje admin, na liście powinien być jeszcze min. jeden developer i jeden devops. //done
 ### Zadania
 Zadanie to najmniejsza jednostka projektu. Jest wykonywana przez jedną osobę, jest przypisane do konkretnej historyjki/funkcjonalności, jest możliwe do zamknięcia. 
-- Zrealizuj CRUD do zadania. 
-- Zrealizuj widok szczegółów zadania - dane zadania oraz nazwa projektu, przypisana funkcjonalność, data startu, zrealizowane roboczogodziny, przypisana osoba 
-- Widok szczegółów zadania (lub dodatkowy widok) powinien dostarczać możliwość przypisania osoby do zadania (devops lub developer). Przypisanie osoby automatycznie zmienia stan zadania z "todo" na "doing" oraz uzupełnia datę startu zadania.
-- Widok szczegółów zadania (lub dodatkowy widok) powinien dostarczać możliwość zmiany stanu zadania na "done". Zmiana stanu automatycznie uzupełnia datę zakończenia zadania.
-- Zrealizuj widok tablicy kanban z zadaniami (kolumny todo, doing, done)
-- Zadania powinny się zapisywać za pośrednictwem mechanizmu komunikacji z api
+- Zrealizuj CRUD do zadania. //done
+- Zrealizuj widok szczegółów zadania - dane zadania oraz nazwa projektu, przypisana funkcjonalność, data startu, zrealizowane roboczogodziny, przypisana osoba  //done
+- Widok szczegółów zadania (lub dodatkowy widok) powinien dostarczać możliwość przypisania osoby do zadania (devops lub developer). Przypisanie osoby automatycznie zmienia stan zadania z "todo" na "doing" oraz uzupełnia datę startu zadania. //done
+- Widok szczegółów zadania (lub dodatkowy widok) powinien dostarczać możliwość zmiany stanu zadania na "done". Zmiana stanu automatycznie uzupełnia datę zakończenia zadania. //done
+- Zrealizuj widok tablicy kanban z zadaniami (kolumny todo, doing, done) //done
+- Zadania powinny się zapisywać za pośrednictwem mechanizmu komunikacji z api //done
 
 
 Model Zadania: 
@@ -22,3 +22,5 @@ Model Zadania:
 - Data startu (stan zmieniony na doing)
 - Data zakończenia (stan zmieniony na done)
 - Użytkownik odpowiedzialny za zadanie (zadanie może wykonywać devops lub developer)
+
+//done

@@ -1,24 +1,81 @@
-import { Project } from "../models/project";
-import { Task } from "../models/task";
+import { User} from '../models/user';
+import { Project } from '../models/project';
+import { Scenario } from '../models/scenario';
+import { Task } from '../models/task';
 
 export class LocalStorageApi {
-    private storageKey: string;
+    private readonly storageKeys = {
+        users: 'users',
+        projects: 'projects',
+        currentProjectId: 'currentProjectId',
+        scenarios: 'scenarios',
+        currentScenarioId: 'currentScenarioId',
+        tasks: 'tasks',
+        currentTaskId: 'currentTaskId'
+    } as const;
 
-    constructor(storageKey: string) {
-        this.storageKey = storageKey;
-    }
+    constructor(private storageKey: string) { }
 
-    // Generic methods for handling data
+
+    // Generic
+
     private getData<T>(): T[] {
         const dataJson = localStorage.getItem(this.storageKey);
         return dataJson ? JSON.parse(dataJson) : [];
     }
 
     private saveData<T>(data: T[]): void {
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+        } catch (error) {
+            console.error('Failed to save data:', error);
+        }
     }
 
+    private updateItem<T extends { id: number }>(id: number, update: Partial<T>): void {
+        const items = this.getData<T>();
+        const index = items.findIndex(item => item.id === id);
+        if (index !== -1) {
+            items[index] = { ...items[index], ...update };
+            this.saveData<T>(items);
+        }
+    }
+
+     // Users
+
+     getUsers(): User[] {
+        return this.getData<User>();
+    }
+
+    saveUsers(users: User[]): void {
+        this.saveData<User>(users);
+    }
+
+    createUser(user: User): void {
+        const users = this.getUsers();
+        users.push(user);
+        this.saveUsers(users);
+    }
+
+    getUser(id: number): User | undefined {
+        const users = this.getUsers();
+        return users.find(user => user.id === id);
+    }
+
+    updateUser(updatedUser: User): void {
+        this.updateItem<User>(updatedUser.id, updatedUser);
+    }
+
+    deleteUser(id: number): void {
+        const users = this.getUsers();
+        const filteredUsers = users.filter(user => user.id !== id);
+        this.saveUsers(filteredUsers);
+    }    
+
+
+
     // Projects
+
     getProjects(): Project[] {
         return this.getData<Project>();
     }
@@ -39,12 +96,7 @@ export class LocalStorageApi {
     }
 
     updateProject(updatedProject: Project): void {
-        const projects = this.getProjects();
-        const index = projects.findIndex(project => project.id === updatedProject.id);
-        if (index !== -1) {
-            projects[index] = updatedProject;
-            this.saveProjects(projects);
-        }
+        this.updateItem<Project>(updatedProject.id, updatedProject);
     }
 
     deleteProject(id: number): void {
@@ -52,19 +104,53 @@ export class LocalStorageApi {
         const filteredProjects = projects.filter(project => project.id !== id);
         this.saveProjects(filteredProjects);
     }
+    
 
-    getCurrentProjectId(): number {
-        const projectId: string | null = localStorage.getItem('currentProjectId');
-        console.log(`Current Project Id: ${projectId}`)
-        return projectId ? parseInt(projectId) : 0;
+    
+    // Scenarios
+
+    getScenarios(): Scenario[] {
+        return this.getData<Scenario>();
     }
 
-    setCurrentProjectId(id: number): void {
-        localStorage.setItem('currentProjectId', id.toString());
-        console.log(`Current Project Id: ${id}`)
+    saveScenarios(scenarios: Scenario[]): void {
+        this.saveData<Scenario>(scenarios);
     }
+
+    createScenario(scenario: Scenario): void {
+        const scenarios = this.getScenarios();
+        scenarios.push(scenario);
+        this.saveScenarios(scenarios);
+    }
+
+    getScenario(id: number): Scenario | undefined {
+        const scenarios = this.getScenarios();
+        return scenarios.find(scenario => scenario.id === id);
+    }
+
+    updateScenario(updatedScenario: Scenario): void {
+        this.updateItem<Scenario>(updatedScenario.id, updatedScenario);
+    }
+
+    deleteScenario(id: number): void {
+        const scenarios = this.getScenarios();
+        const filteredScenarios = scenarios.filter(scenario => scenario.id !== id);
+        this.saveScenarios(filteredScenarios);
+    }
+    
+
+    deleteScenariosByProjectId(projectId: number): void {
+        this.saveScenarios(this.getScenarios().filter(scenario => scenario.projectId !== projectId));
+    }
+
+    getScenariosByProjectId(projectId: number): Scenario[] {
+        return this.getScenarios().filter(scenario => scenario.projectId === projectId);
+    }
+
+
 
     // Tasks
+
     getTasks(): Task[] {
         return this.getData<Task>();
     }
@@ -85,12 +171,7 @@ export class LocalStorageApi {
     }
 
     updateTask(updatedTask: Task): void {
-        const tasks = this.getTasks();
-        const index = tasks.findIndex(task => task.id === updatedTask.id);
-        if (index !== -1) {
-            tasks[index] = updatedTask;
-            this.saveTasks(tasks);
-        }
+        this.updateItem<Task>(updatedTask.id, updatedTask);
     }
 
     deleteTask(id: number): void {
@@ -99,18 +180,50 @@ export class LocalStorageApi {
         this.saveTasks(filteredTasks);
     }
 
-    getTasksByProjectId(projectId: number): Task[] {
-        return this.getTasks().filter(task => task.projectId === projectId);
+    deleteTasksByScenarioId(scenarioId: number): void {
+        this.saveTasks(this.getTasks().filter(task => task.scenarioId !== scenarioId));
+    }
+
+    getTasksByScenarioId(scenarioId: number): Task[] {
+        return this.getTasks().filter(task => task.scenarioId === scenarioId);
+    }
+
+
+
+
+    // Local Storage ID management
+    getCurrentId(key: string): number {
+        const id: string | null = localStorage.getItem(key);
+        console.log(`Current ID for key ${key}: ${id}`)
+        return id ? parseInt(id) : 0;
+    }
+
+    setCurrentId(key: string, id: number): void {
+        localStorage.setItem(key, id.toString());
+        console.log(`Set current ID for key ${key}: ${id}`)
+    }
+
+    getCurrentProjectId(): number {
+        return this.getCurrentId(this.storageKeys.currentProjectId);
+    }
+
+    setCurrentProjectId(id: number): void {
+        this.setCurrentId(this.storageKeys.currentProjectId, id);
     }
 
     getCurrentTaskId(): number {
-        const taskId: string | null = localStorage.getItem('currentTaskId');
-        console.log(`Current Task Id: ${taskId}`)
-        return taskId ? parseInt(taskId) : 0;
+        return this.getCurrentId(this.storageKeys.currentTaskId);
     }
 
     setCurrentTaskId(id: number): void {
-        localStorage.setItem('currentTaskId', id.toString());
-        console.log(`Current Task Id: ${id}`)
+        this.setCurrentId(this.storageKeys.currentTaskId, id);
+    }
+
+    getCurrentScenarioId(): number {
+        return this.getCurrentId(this.storageKeys.currentScenarioId);
+    }
+
+    setCurrentScenarioId(id: number): void {
+        this.setCurrentId(this.storageKeys.currentScenarioId, id);
     }
 }
