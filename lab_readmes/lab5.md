@@ -1,7 +1,7 @@
 ### Wygląd aplikacji
 - Skorzystaj z dowolnej biblioteki CSS/komponentów (przykładowe biblioteki poniżej) do dopracowania UI aplikacji.  
-Jeśli masz gotowe swoje własne style - nie musisz ich zmieniać (zobacz wtedy jak działają poniższe biblioteki)
-- Zaimplementuj tryb ciemny/jasny (przełącznik na stronie lub zależny od ustawień przeglądarki)
+Jeśli masz gotowe swoje własne style - nie musisz ich zmieniać (zobacz wtedy jak działają poniższe biblioteki) //done
+- Zaimplementuj tryb ciemny/jasny (przełącznik na stronie lub zależny od ustawień przeglądarki) //done
 
 #### Przykładowe biblioteki CSS/komponentów:
 - [Bootstrap](https://getbootstrap.com/)

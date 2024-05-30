@@ -1,9 +1,7 @@
 import { Task } from './models/task';
-import { LocalStorageApi } from './api/localStorageApi';
-import { loggedInUser, users } from './userContext';
+import { MongoApi } from './api/mongoApi';
 
-const apiTasks = new LocalStorageApi('tasks');
-const apiScenarios = new LocalStorageApi('scenarios');
+const api = new MongoApi;
 
 const newTaskButton = document.getElementById('task-modal-new-button') as HTMLElement;
 const modalNewTask = document.getElementById('task-modal-new') as HTMLElement;
@@ -50,7 +48,7 @@ function addTaskToList(task: Task) {
 }
 
 function showTaskDetails(task: Task) {
-    apiTasks.setCurrentTaskId(task.id);
+    api.setCurrentTaskId(task.id);
     updateNameInput.value = task.name;
     updateDescriptionInput.value = task.description;
     updatePriorityInput.value = task.priority;
@@ -85,82 +83,126 @@ function clearTaskList(): void {
     taskListContainer.innerHTML = '';
 }
 
-export function loadTasks(): void {
+export async function loadTasks(): Promise<void> {
+    const scenarioId: number = await api.getCurrentScenarioId();
     clearTaskList();
-    const tasks = apiTasks.getTasksByScenarioId(apiTasks.getCurrentScenarioId());
+    const tasks = await api.getTasksByScenarioId(scenarioId);
     tasks.forEach(task => addTaskToList(task));
 }
 
-function filterTasks(status: 'all' | 'todo' | 'in progress' | 'done') {
+async function filterTasks(status: 'all' | 'todo' | 'in progress' | 'done'): Promise<void> {
+    const scenarioId: number = await api.getCurrentScenarioId();
     clearTaskList();
-    let tasks = apiTasks.getTasksByScenarioId(apiTasks.getCurrentScenarioId());
+    let tasks = await api.getTasksByScenarioId(scenarioId);
     if (status !== 'all') {
         tasks = tasks.filter(task => task.status === status);
     }
     tasks.forEach(task => addTaskToList(task));
 }
-
-document.getElementById('task-form')?.addEventListener('submit', (e) => {
+document.getElementById('task-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const scenarioId: number = await api.getCurrentScenarioId();
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        alert('User not logged in');
+        return;
+    }
     const priority: 'low' | 'medium' | 'high' = priorityInput.value as 'low' | 'medium' | 'high';
-    const task = new Task(Date.now(), apiTasks.getCurrentScenarioId(), loggedInUser.id, nameInput.value, descriptionInput.value, priority, 'todo', parseInt(estimatedTimeInput.value), new Date());
-    apiTasks.createTask(task);
+    const task = new Task(Date.now(), scenarioId, parseInt(userId), nameInput.value, descriptionInput.value, priority, 'todo', parseInt(estimatedTimeInput.value), new Date());
+    api.createTask(task);
     addTaskToList(task);
     nameInput.value = '';
     descriptionInput.value = '';
 });
 
-document.getElementById('task-details-form')?.addEventListener('submit', (e) => {
+document.getElementById('task-details-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (apiTasks.getCurrentTaskId() == null) {
+
+    const scenarioId: number = await api.getCurrentScenarioId();
+    const taskId: number = await api.getCurrentTaskId();
+
+    if (scenarioId == null) {
         alert("No task selected for details.");
         return;
     }
 
     const updateStatus: 'todo' | 'in progress' | 'done' = updateStatusInput.value as 'todo' | 'in progress' | 'done';
     const updatePriority: 'low' | 'medium' | 'high' = updatePriorityInput.value as 'low' | 'medium' | 'high';
-    const updateStartDate = new Date(updateStartDateInput.value);
-    const updateEndDate = new Date(updateEndDateInput.value);
 
-    const existingTask = apiTasks.getTask(apiTasks.getCurrentTaskId());
+    const updateStartDateInputVal: string = (document.getElementById('task-details-start-date') as HTMLInputElement).value;
+    const updateEndDateInputVal: string = (document.getElementById('task-details-end-date') as HTMLInputElement).value;
+
+    // Ensure date inputs are in the correct format
+    const updateStartDate: Date = parseDate(updateStartDateInputVal);
+    const updateEndDate: Date = parseDate(updateEndDateInputVal);
+
+    const existingTask = await api.getSingleTask(taskId);
     if (!existingTask) {
         alert("Task not found.");
         return;
     }
 
-    const updatedTask = new Task(apiTasks.getCurrentTaskId(), apiTasks.getCurrentScenarioId(), parseInt(updateUserSelect.value), updateNameInput.value, updateDescriptionInput.value, updatePriority, updateStatus, parseInt(updateEstimatedTimeInput.value), existingTask.creationDate, updateStartDate, updateEndDate);
-    apiTasks.updateTask(updatedTask);
+    const updatedTask = new Task(taskId, scenarioId, parseInt(updateUserSelect.value), updateNameInput.value, updateDescriptionInput.value, updatePriority, updateStatus, parseInt(updateEstimatedTimeInput.value), existingTask.creationDate, updateStartDate, updateEndDate);
+    console.log(updateStartDate, updateEndDate)
+    api.updateTask(updatedTask);
 
     loadTasks();
     taskListContainer.style.display = 'block';
     modalTaskUpdate.style.display = 'none';
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-    users.forEach(user => {
-        if (user.role === 'devops' || user.role === 'developer') {
-            const option = document.createElement('option');
-            option.value = user.id.toString();
-            option.textContent = `${user.name} ${user.surname}`;
-            updateUserSelect.appendChild(option);
+function parseDate(dateString: string): Date {
+    const [datePart, timePart] = dateString.split(',');
+    const [day, month, year] = datePart.trim().split('.').map(part => parseInt(part, 10));
+
+    if ([day, month, year].some(isNaN)) {
+        return new Date(NaN);
+    }
+    const [hours, minutes, seconds] = timePart ? timePart.trim().split(':').map(part => parseInt(part, 10)) : [0, 0, 0];
+    if ([hours, minutes, seconds].some(isNaN)) {
+        return new Date(year, month - 1, day);
+    }
+    return new Date(year, month - 1, day, hours, minutes, seconds);
+}
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const users = await api.getUsers(); // Call the function to get users
+
+        if (!users) {
+            throw new Error('Failed to fetch users');
         }
-    });
-})
+
+        users.forEach((user: { id: number, name: string, surname: string, role: string }) => {
+            if (user.role === 'devops' || user.role === 'developer') {
+                const option = document.createElement('option');
+                option.value = user.id.toString();
+                option.textContent = `${user.name} ${user.surname}`;
+                updateUserSelect.appendChild(option);
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+    }
+});
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
     const deleteButton = document.getElementById('task-details-delete');
     if (deleteButton) {
-        deleteButton.addEventListener('click', () => {
-            const currentTaskId = apiTasks.getCurrentTaskId();
+        deleteButton.addEventListener('click', async () => { // Make the callback async
+            const currentTaskId = await api.getCurrentTaskId();
             if (currentTaskId) {
                 const confirmed = confirm("Are you sure you want to delete this task?");
                 if (confirmed) {
-                    apiTasks.deleteTask(currentTaskId);
+                    await api.deleteTask(currentTaskId); // Await the deleteTask call
 
                     modalTaskUpdate.style.display = 'none';
                     taskListContainer.style.display = 'block';
 
-                    loadTasks();
+                    await loadTasks(); // Ensure loadTasks is awaited
                 }
             } else {
                 alert("No task is currently selected for deletion.");
@@ -169,8 +211,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-newTaskButton.addEventListener('click', () => {
-    if (apiScenarios.getCurrentScenarioId() > 0) {
+
+newTaskButton.addEventListener('click', async () => {
+    if (await api.getCurrentScenarioId() > 0) {
         modalNewTask.style.display = "block";
     } else {
         alert("No scenario selected. Please select a scenario first.");
@@ -178,15 +221,15 @@ newTaskButton.addEventListener('click', () => {
 });
 
 
-updateUserSelect.addEventListener('change', (event) => {
-    const selectElement = event.target as HTMLSelectElement;
+updateUserSelect.addEventListener('change', async (e) => {
+    const selectElement = e.target as HTMLSelectElement;
     if (selectElement) {
         const selectedUserId = selectElement.value;
-        const currentTaskId = apiTasks.getCurrentTaskId();
+        const currentTaskId = await api.getCurrentTaskId();
         if (currentTaskId) {
-            const task = apiTasks.getTask(currentTaskId);
+            const task = await api.getSingleTask(currentTaskId);
             if (task) {
-                task.ownerId = parseInt(selectedUserId, 10);
+                task.ownerId = parseInt(selectedUserId);
 
                 if (task.status === 'todo') {
                     task.status = 'in progress';
@@ -194,8 +237,14 @@ updateUserSelect.addEventListener('change', (event) => {
                         task.startDate = new Date();
                     }
                 }
-                apiTasks.updateTask(task);
-                showTaskDetails(task);
+
+                try {
+                    await api.updateTask(task);
+                    showTaskDetails(task);
+                } catch (error) {
+                    console.error('Failed to update task:', error);
+                    alert('Failed to update task');
+                }
             }
         }
     } else {
@@ -205,13 +254,13 @@ updateUserSelect.addEventListener('change', (event) => {
 
 
 
-updateStatusInput.addEventListener('change', (event) => {
-    const selectElement = event.target as HTMLSelectElement;
+updateStatusInput.addEventListener('change', async (e) => {
+    const selectElement = e.target as HTMLSelectElement;
     if (selectElement) {
         const selectedStatus = selectElement.value as 'todo' | 'in progress' | 'done';
-        const currentTaskId = apiTasks.getCurrentTaskId();
+        const currentTaskId = await api.getCurrentTaskId();
         if (currentTaskId) {
-            const task = apiTasks.getTask(currentTaskId);
+            const task = await api.getSingleTask(currentTaskId);
             if (task) {
                 if (task.ownerId === 1) {
                     alert("An owner must be assigned before changing the status.");
@@ -233,7 +282,7 @@ updateStatusInput.addEventListener('change', (event) => {
                 if (selectedStatus === 'done' && !task.endDate) {
                     task.endDate = new Date();
                 }
-                apiTasks.updateTask(task);
+                api.updateTask(task);
                 showTaskDetails(task);
             }
         }
@@ -252,13 +301,13 @@ function toggleModalVisibility(event: MouseEvent, modalElement: HTMLElement, sho
     }
 }
 
-window.addEventListener('click', (event) => {
-    toggleModalVisibility(event, modalNewTask, false);
-    toggleModalVisibility(event, modalTaskUpdate, false);
+window.addEventListener('click', (e) => {
+    toggleModalVisibility(e, modalNewTask, false);
+    toggleModalVisibility(e, modalTaskUpdate, false);
 });
 
 
-kanbanNavigationButton.addEventListener('click', () => {
+kanbanNavigationButton.addEventListener('click', async () => {
     const kanbanContainer = document.getElementById('task-container-kanban') as HTMLElement;
     const todoContainer = document.getElementById('task-container-kanban-todo') as HTMLElement;
     const inProgressContainer = document.getElementById('task-container-kanban-inprogress') as HTMLElement;
@@ -273,12 +322,12 @@ kanbanNavigationButton.addEventListener('click', () => {
         inProgressContainer.innerHTML = '<h2>In progress</h2>';
         doneContainer.innerHTML = '<h2>Done</h2>';
 
-        const tasks = apiTasks.getTasks();
+        const tasks = await api.getTasks();
 
         tasks.forEach(task => {
             const taskElement = document.createElement('div');
             taskElement.textContent = task.name;
-            taskElement.className = 'task-card'; 
+            taskElement.className = 'task-card';
 
             switch (task.status) {
                 case 'todo':

@@ -1,21 +1,110 @@
-import { LocalStorageApi } from './api/localStorageApi';
+import { MongoApi } from './api/mongoApi';
 import { loadProjects } from './projectManager';
 import { loadScenarios } from './scenarioManager';
 import { loadTasks } from './taskManager';
-import { loggedInUser } from './userContext';
 
-const apiProjects = new LocalStorageApi('projects');
+const api = new MongoApi
 
 document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
 
-    console.log(`Hello ${loggedInUser.name}`)
-    //Current Project Id is read becouse of loadProjects();
+    setDarkLightToggle();
     setupNavigation();
     loadProjects();
-    loadScenarios();
-    loadTasks();
+    setupLoginForm();
+}
+
+async function setupLoginForm() {
+    const loginContainer = document.getElementById('container-login') as HTMLElement;
+    const loginForm = document.getElementById('login-form') as HTMLFormElement;
+
+    if (await areTokensPresent()) {
+        loginContainer.style.display = 'none';
+    } else {
+        loginContainer.style.display = 'block';
+    }
+
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const username = (document.getElementById('username') as HTMLInputElement).value;
+        const password = (document.getElementById('password') as HTMLInputElement).value;
+
+        try {
+            const { token, refreshToken, userId } = await login(username, password);
+            localStorage.setItem('userId', userId);
+            await saveTokens(token, refreshToken);
+            alert('Login successful!');
+            loginContainer.style.display = 'none';
+            // Hide the login form and proceed with your application logic
+        } catch (error) {
+            console.error('Login failed:', error);
+            alert('Login failed');
+            loginContainer.style.display = 'block';
+        }
+    });
+}
+
+
+async function login(username: string, password: string): Promise<{ token: string, refreshToken: string, userId: string }> {
+    const response = await fetch('http://localhost:2137/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+    });
+
+    if (!response.ok) {
+        throw new Error('Login failed');
+    }
+
+    return response.json();
+}
+
+async function areTokensPresent(): Promise<boolean> {
+    try {
+        const response = await fetch('http://localhost:2137/checkTokens');
+        if (!response.ok) throw new Error('Failed to check tokens');
+        const tokens = await response.json();
+        return !!tokens.token && !!tokens.refreshToken;
+    } catch (error) {
+        console.error('Error checking tokens:', error);
+        return false;
+    }
+}
+
+async function saveTokens(token: string, refreshToken: string): Promise<void> {
+    try {
+        const response = await fetch('http://localhost:2137/saveTokens', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token, refreshToken }),
+        });
+
+        if (!response.ok) throw new Error('Failed to save tokens');
+    } catch (error) {
+        console.error('Error saving tokens:', error);
+    }
+}
+
+
+
+
+
+function setDarkLightToggle() {
+    const themeButton = document.getElementById('toggle-theme-button') as HTMLButtonElement;
+    themeButton.addEventListener('click', function () {
+        if (document.body.classList.toggle('dark-mode')) {
+            themeButton.textContent = '☀️';
+        } else {
+            themeButton.textContent = '🌙';
+        }
+    });
+
 }
 
 function setupNavigation() {
@@ -32,7 +121,10 @@ function setupNavigation() {
     });
 }
 
-function navigateToSection(section: 'project' | 'task' | 'scenario') {
+async function navigateToSection(section: 'project' | 'task' | 'scenario') {
+    const projectId: number = await api.getCurrentProjectId();
+    const scenarioId: number = await api.getCurrentScenarioId();
+
     const projectListContainer = document.getElementById('project-container-list') as HTMLElement;
     const taskListContainer = document.getElementById('task-container-list') as HTMLElement;
     const scenarioListContainer = document.getElementById('scenario-container-list') as HTMLElement;
@@ -52,6 +144,13 @@ function navigateToSection(section: 'project' | 'task' | 'scenario') {
     [ProjectModalNewButton, ScenarioModalNewButton, TaskModalNewButton].forEach(button => button.style.display = 'none');
     navigationStatuses.style.display = 'none';
 
+    if (projectId <= 0) {
+        alert("No project selected. Please select a project first.");
+        section = 'project';
+    }
+
+
+
     switch (section) {
         case 'project':
             ProjectModalNewButton.style.display = 'block';
@@ -60,27 +159,31 @@ function navigateToSection(section: 'project' | 'task' | 'scenario') {
             kanbanNavigationButton.style.display = 'none';
             break;
         case 'scenario':
-            if (apiProjects.getCurrentProjectId() > 0) {
+            ScenarioModalNewButton.style.display = 'block';
+            scenarioListContainer.style.display = 'block';
+            navigationStatuses.style.display = 'flex';
+            kanbanNavigationButton.style.display = 'none';
+            await loadScenarios();
+            break;
+        case 'task':
+
+            if (scenarioId <= 0) {
+                alert("No scenario selected. Please select a scenario first.");
                 ScenarioModalNewButton.style.display = 'block';
                 scenarioListContainer.style.display = 'block';
                 navigationStatuses.style.display = 'flex';
                 kanbanNavigationButton.style.display = 'none';
-                loadScenarios();
             } else {
-                alert("No project selected. Please select a project first.");
-            }
-            break;
-        case 'task':
-            if (apiProjects.getCurrentProjectId() > 0) {
                 TaskModalNewButton.style.display = 'block';
                 kanbanNavigationButton.style.display = 'block';
                 taskListContainer.style.display = 'block';
                 navigationStatuses.style.display = 'flex';
                 kanbanContainer.style.display = 'none';
-                loadTasks();
-            } else {
-                alert("No project selected. Please select a project first.");
+                await loadTasks();
+                break;
             }
-            break;
+
+
     }
 }
+

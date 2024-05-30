@@ -1,8 +1,7 @@
 import { Project } from './models/project';
-import { LocalStorageApi } from './api/localStorageApi';
+import { MongoApi } from './api/mongoApi';
 
-const apiProjects = new LocalStorageApi('projects');
-const apiScenarios = new LocalStorageApi('scenarios');
+const api = new MongoApi;
 
 const newProjectButton = document.getElementById('project-modal-new-button') as HTMLElement;
 const modalNewProject = document.getElementById('project-modal-new') as HTMLElement;
@@ -52,16 +51,16 @@ function addProjectToList(project: Project) {
     projectListContainer.appendChild(listElement);
 }
 
-function setCurrentProject(projectId: number): void
-{
-    apiProjects.setCurrentProjectId(projectId);
-    apiProjects.setCurrentScenarioId(0);
-    apiProjects.setCurrentTaskId(0);
+async function setCurrentProject(projectId: number): Promise<void> {
+    await api.setCurrentProjectId(projectId);
+    await api.setCurrentScenarioId(0);
+    await api.setCurrentTaskId(0);
 }
 
-function deleteProject(projectId: number, listElement: HTMLElement) {
-    apiProjects.deleteProject(projectId);
-    apiScenarios.deleteScenariosByProjectId(projectId);
+async function deleteProject(projectId: number, listElement: HTMLElement) {
+    await api.deleteProject(projectId);
+    await api.deleteScenariosByProjectId(projectId);
+    await api.setCurrentProjectId(0);
     listElement.remove();
 }
 
@@ -79,7 +78,6 @@ function prepareProjectUpdate(project: Project): void {
 }
 
 function setCurrentProjectColor(id: number): void {
-
     const allProjects = document.querySelectorAll('.project');
     allProjects.forEach((project) => {
         (project as HTMLElement).style.backgroundColor = '';
@@ -95,25 +93,26 @@ newProjectButton.addEventListener('click', () => {
     modalNewProject.style.display = "block";
 });
 
-document.getElementById('project-form')?.addEventListener('submit', (e) => {
+document.getElementById('project-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const project = new Project(Date.now(), nameInput.value, descriptionInput.value);
-    apiProjects.createProject(project);
+    await api.createProject(project);
     addProjectToList(project);
     nameInput.value = '';
     descriptionInput.value = '';
 });
 
-document.getElementById('project-form-update')?.addEventListener('submit', (e) => {
+document.getElementById('project-form-update')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    let currentProjectId = apiProjects.getCurrentProjectId();
+    const currentProjectId = await api.getCurrentProjectId();
     if (currentProjectId == null) {
         alert("No project selected for update.");
         return;
     }
 
     const updatedProject = new Project(currentProjectId, updateNameInput.value, updateDescriptionInput.value);
-    apiProjects.updateProject(updatedProject);
+    await api.updateProject(updatedProject);
+    loadProjects();
     modalProjectUpdate.style.display = 'none';
     setCurrentProjectColor(currentProjectId);
 });
@@ -131,8 +130,13 @@ function toggleModalVisibility(event: MouseEvent, modalElement: HTMLElement, sho
     }
 }
 
-export function loadProjects() {
-    const projects = apiProjects.getProjects();
+function clearProjectList(): void {
+    projectListContainer.innerHTML = '';
+}
+
+export async function loadProjects() {
+    clearProjectList();
+    const projects = await api.getProjects();
     projects.forEach(addProjectToList);
-    setCurrentProjectColor(apiProjects.getCurrentProjectId());
-};
+    setCurrentProjectColor(await api.getCurrentProjectId());
+}

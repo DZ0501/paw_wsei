@@ -1,8 +1,8 @@
 import { Scenario } from './models/scenario';
-import { LocalStorageApi } from './api/localStorageApi';
 import { loggedInUser } from './userContext';
+import { MongoApi } from './api/mongoApi';
 
-const apiScenarios = new LocalStorageApi('scenarios');
+const api = new MongoApi;
 
 const newScenarioButton = document.getElementById('scenario-modal-new-button') as HTMLElement;
 const modalNewScenario = document.getElementById('scenario-modal-new') as HTMLElement;
@@ -19,8 +19,6 @@ const statusButtonAll = document.getElementById("navigation-statuses-button-all"
 const statusButtonTodo = document.getElementById("navigation-statuses-button-todo") as HTMLElement;
 const statusButtonInprogress = document.getElementById("navigation-statuses-button-inprogress") as HTMLElement;
 const statusButtonDone = document.getElementById("navigation-statuses-button-done") as HTMLElement;
-
-
 
 function addScenarioToList(scenario: Scenario) {
     const listElement = document.createElement('div');
@@ -41,7 +39,7 @@ function addScenarioToList(scenario: Scenario) {
     selectButton.textContent = 'Select';
     selectButton.addEventListener('click', (event) => {
         event.stopPropagation();
-        apiScenarios.setCurrentScenarioId(scenario.id);
+        api.setCurrentScenarioId(scenario.id);
         setCurrentScenarioColor(scenario.id);
     });
 
@@ -65,7 +63,7 @@ function setCurrentScenarioColor(id: number): void {
 }
 
 function showScenarioDetails(scenario: Scenario): void {
-    apiScenarios.setCurrentScenarioId(scenario.id);
+    api.setCurrentScenarioId(scenario.id);
     setCurrentScenarioColor(scenario.id);
     updateNameInput.value = scenario.name;
     updateDescriptionInput.value = scenario.description;
@@ -74,8 +72,9 @@ function showScenarioDetails(scenario: Scenario): void {
     modalScenarioUpdate.style.display = 'block';
 }
 
-newScenarioButton.addEventListener('click', () => {
-    if (apiScenarios.getCurrentProjectId() > 0) {
+newScenarioButton.addEventListener('click', async () => {
+    const projectId: number = await api.getCurrentProjectId();
+    if (projectId > 0) {
         modalNewScenario.style.display = "block";
     } else {
         alert("No project selected. Please select a project first.");
@@ -87,24 +86,28 @@ statusButtonTodo.addEventListener('click', () => filterScenarios('todo'));
 statusButtonInprogress.addEventListener('click', () => filterScenarios('in progress'));
 statusButtonDone.addEventListener('click', () => filterScenarios('done'));
 
-document.getElementById('scenario-form')?.addEventListener('submit', (e) => {
+document.getElementById('scenario-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const projectId: number = await api.getCurrentProjectId();
     const priority: 'low' | 'medium' | 'high' = priorityInput.value as 'low' | 'medium' | 'high';
-    const scenario = new Scenario(Date.now(), nameInput.value, descriptionInput.value, priority, apiScenarios.getCurrentProjectId(), new Date(), 'todo', loggedInUser.id);
-    apiScenarios.createScenario(scenario);
+    const scenario = new Scenario(Date.now(), nameInput.value, descriptionInput.value, priority, projectId, new Date(), 'todo', loggedInUser.id);
+    api.createScenario(scenario);
     addScenarioToList(scenario);
     nameInput.value = '';
     descriptionInput.value = '';
 });
 
-document.getElementById('scenario-details-form')?.addEventListener('submit', (e) => {
+document.getElementById('scenario-details-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (apiScenarios.getCurrentScenarioId() == null) {
+
+    if (await api.getCurrentScenarioId() == null) {
         alert("No scenario selected for details.");
         return;
     }
 
-    const existingScenario = apiScenarios.getScenario(apiScenarios.getCurrentScenarioId());
+    const scenarioId = await api.getCurrentScenarioId();
+    const existingScenario = await api.getSingleScenario(scenarioId);
+
     if (!existingScenario) {
         alert("Scenario not found.");
         return;
@@ -112,14 +115,48 @@ document.getElementById('scenario-details-form')?.addEventListener('submit', (e)
 
     const updatePriority: 'low' | 'medium' | 'high' = updatePriorityInput.value as 'low' | 'medium' | 'high';
     const updateStatus: 'todo' | 'in progress' | 'done' = updateStatusInput.value as 'todo' | 'in progress' | 'done';
-    const updatedScenario = new Scenario(apiScenarios.getCurrentScenarioId(), updateNameInput.value, updateDescriptionInput.value, updatePriority, existingScenario.projectId, existingScenario.creationDate, updateStatus, loggedInUser.id);
-    apiScenarios.updateScenario(updatedScenario);
+    const updatedScenario = new Scenario(
+        existingScenario.id, 
+        updateNameInput.value, 
+        updateDescriptionInput.value, 
+        updatePriority, 
+        existingScenario.projectId, 
+        existingScenario.creationDate, 
+        updateStatus, 
+        loggedInUser.id
+    );
 
-    loadScenarios();
+    await api.updateScenario(updatedScenario);
+
+    await loadScenarios();
 
     scenarioListContainer.style.display = 'block';
     modalScenarioUpdate.style.display = 'none';
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const deleteButton = document.getElementById('scenario-details-delete');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', async () => { 
+            const currentTaskId = await api.getCurrentTaskId();
+            if (currentTaskId) {
+                const confirmed = confirm("Are you sure you want to delete this scenario?");
+                if (confirmed) {
+                    await api.deleteScenario(await api.getCurrentScenarioId()); 
+
+                    scenarioListContainer.style.display = 'block';
+                    modalScenarioUpdate.style.display = 'none';
+
+                    await loadScenarios(); 
+                }
+            } else {
+                alert("No scenario is currently selected for deletion.");
+            }
+        });
+    }
+});
+
+
 
 window.addEventListener('click', (event) => {
     toggleModalVisibility(event, modalNewScenario, false);
@@ -133,25 +170,32 @@ function toggleModalVisibility(event: MouseEvent, modalElement: HTMLElement, sho
     }
 }
 
-export function loadScenarios(): void {
+export async function loadScenarios(): Promise<void> {
+    const projectId: number = await api.getCurrentProjectId();
     clearScenarioList();
-    const scenarios = apiScenarios.getScenariosByProjectId(apiScenarios.getCurrentProjectId());
+    const scenarios = await api.getScenariosByProjectId(projectId);
     scenarios.forEach(scenario => addScenarioToList(scenario));
-    setCurrentScenarioColor(apiScenarios.getCurrentScenarioId());
+    const scenarioId = await api.getCurrentScenarioId();
+    setCurrentScenarioColor(scenarioId);
 }
 
 function clearScenarioList(): void {
     scenarioListContainer.innerHTML = '';
 }
 
-function filterScenarios(status: 'all' | 'todo' | 'in progress' | 'done') {
+async function filterScenarios(status: 'all' | 'todo' | 'in progress' | 'done'): Promise<void> {
+    const projectId: number = await api.getCurrentProjectId();
     clearScenarioList();
-    let scenarios = apiScenarios.getScenariosByProjectId(apiScenarios.getCurrentProjectId());
+    const scenarios = await api.getScenariosByProjectId(projectId);
 
+    let filteredScenarios: Scenario[];
     if (status !== 'all') {
-        scenarios = scenarios.filter(scenario => scenario.status === status);
+        filteredScenarios = scenarios.filter((scenario: Scenario) => scenario.status === status);
+    } else {
+        filteredScenarios = scenarios;
     }
 
-    scenarios.forEach(scenario => addScenarioToList(scenario));
-    setCurrentScenarioColor(apiScenarios.getCurrentScenarioId());
+    filteredScenarios.forEach((scenario: Scenario) => addScenarioToList(scenario));
+    const scenarioId = await api.getCurrentScenarioId();
+    setCurrentScenarioColor(scenarioId);
 }

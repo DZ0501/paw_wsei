@@ -12,12 +12,24 @@
 <body>
     <div id="container">
         <div id="container-header">
+            <button id="toggle-theme-button">🌙</button>
             <h2>Project Management</h2>
             <button id="project-modal-new-button">New Project</button>
             <button id="scenario-modal-new-button">New Scenario</button>
             <button id="task-modal-new-button">New Task</button>
             <button id="task-container-button-kanban">Toggle Kanban</button>
         </div>
+
+        <div id="container-login" class="modal">
+            <div class="modal-content">
+                <form id="login-form">
+                    <input type="text" id="username" placeholder="Username" required>
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+            </div>
+        </div>
+
 
         <div id="project-container-list">
         </div>
@@ -89,7 +101,7 @@
                         <option value="done">Done</option>
                     </select>
                     <button type="submit">Save</button>
-                    <button id="scenario-details-delete">Delete</button>
+                    <button type="button" id="scenario-details-delete">Delete</button>
                 </form>
             </div>
         </div>
@@ -189,7 +201,7 @@
                 </div>
             </div>
         </div>
-        
+
 
 
 

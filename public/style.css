@@ -1,4 +1,7 @@
 /* GENERAL */
+body {
+    transition: background-color 0.5s ease, color 0.5s ease;
+}
 
 body,
 html {
@@ -69,6 +72,60 @@ html {
 #scenario-modal-new-button,
 #task-modal-new-button {
     display: none;
+}
+
+/* DARK MODE */
+
+#toggle-theme-button {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    outline: inherit;
+    padding: 10px;
+    font-size: 16px;
+}
+
+#toggle-theme-button:hover {
+    text-shadow: 0px 0px 20px #000000;
+}
+
+body.dark-mode #toggle-theme-button:hover {
+    text-shadow: 0px 0px 20px #d4d4d4;
+}
+
+body.dark-mode {
+    background-color: #474747;
+    color: #ffffff;
+}
+
+body.dark-mode #task-container-details {
+    background-color: #767676;
+}
+
+body.dark-mode #container,
+body.dark-mode #navigation-general,
+body.dark-mode #navigation-statuses {
+    background-color: #585858;
+    border-color: #787878;
+}
+
+body.dark-mode .project,
+body.dark-mode .scenario,
+body.dark-mode .task,
+body.dark-mode .task-card {
+    background-color: #787878;
+    color: #ffffff;
+}
+
+body.dark-mode #container-header {
+    border-bottom-color: #cfcfcf;
+}
+
+body.dark-mode .modal-content {
+    background-color: #696969;
+    color: #f0f0f0;
 }
 
 /* PROJECTS */
@@ -265,30 +322,30 @@ html {
 #task-container-kanban-statuses {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 1%; 
+    gap: 1%;
     height: 90%;
     width: 100%;
 }
 
 .task-column {
-    padding: 20px; 
+    padding: 20px;
 }
 
 .task-card {
-    background-color: #e2e2df; 
-    border: 1px solid #949494; 
+    background-color: #e2e2df;
+    border: 1px solid #949494;
     margin-top: 10%;
     padding: 10px 15px;
-    border-radius: 5px; 
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.2); 
+    border-radius: 5px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
     font-family: 'Comic Sans MS', 'Comic Neue', cursive;
     line-height: 1.4;
-    word-wrap: break-word;  
-    transition: transform 0.5s ease; 
+    word-wrap: break-word;
+    transition: transform 0.5s ease;
 }
 
 .task-card:hover {
-    box-shadow: 5px 5px 20px rgba(0,0,0,0.3); 
+    box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.3);
 }
 
 .task-card:nth-child(odd) {
