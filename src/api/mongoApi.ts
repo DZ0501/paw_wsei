@@ -53,6 +53,51 @@ export class MongoApi {
 
     // Users
 
+    async login(username: string, password: string): Promise<{ token: string, refreshToken: string, userId: string }> {
+        const response = await fetch(`${this.baseUrl}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Login failed');
+        }
+
+        return response.json();
+    }
+
+    public async areTokensPresent(): Promise<boolean> {
+        try {
+            const response = await fetch(`${this.baseUrl}/checkTokens`);
+            if (!response.ok) throw new Error('Failed to check tokens');
+            const tokens = await response.json();
+            return !!tokens.token && !!tokens.refreshToken;
+        } catch (error) {
+            console.error('Error checking tokens:', error);
+            return false;
+        }
+    }
+
+    public async saveTokens(token: string, refreshToken: string): Promise<void> {
+        try {
+            const response = await fetch(`${this.baseUrl}/saveTokens`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token, refreshToken }),
+            });
+
+            if (!response.ok) throw new Error('Failed to save tokens');
+        } catch (error) {
+            console.error('Error saving tokens:', error);
+        }
+    }
+
+
     async getUsers(): Promise<User[]> {
         return this.fetchData<User[]>('users');
     }
@@ -106,7 +151,6 @@ export class MongoApi {
             method: 'DELETE',
         });
         if (!response.ok) {
-            // Check if the error is due to no scenarios being found
             if (response.status === 404) {
                 console.log('No scenarios found for this project.');
                 return;

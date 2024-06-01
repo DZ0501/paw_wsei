@@ -19,7 +19,7 @@ async function setupLoginForm() {
     const loginContainer = document.getElementById('container-login') as HTMLElement;
     const loginForm = document.getElementById('login-form') as HTMLFormElement;
 
-    if (await areTokensPresent()) {
+    if (await api.areTokensPresent()) {
         loginContainer.style.display = 'none';
     } else {
         loginContainer.style.display = 'block';
@@ -32,12 +32,11 @@ async function setupLoginForm() {
         const password = (document.getElementById('password') as HTMLInputElement).value;
 
         try {
-            const { token, refreshToken, userId } = await login(username, password);
+            const { token, refreshToken, userId } = await api.login(username, password);
             localStorage.setItem('userId', userId);
-            await saveTokens(token, refreshToken);
+            await api.saveTokens(token, refreshToken);
             alert('Login successful!');
             loginContainer.style.display = 'none';
-            // Hide the login form and proceed with your application logic
         } catch (error) {
             console.error('Login failed:', error);
             alert('Login failed');
@@ -45,55 +44,6 @@ async function setupLoginForm() {
         }
     });
 }
-
-
-async function login(username: string, password: string): Promise<{ token: string, refreshToken: string, userId: string }> {
-    const response = await fetch('http://localhost:2137/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-    });
-
-    if (!response.ok) {
-        throw new Error('Login failed');
-    }
-
-    return response.json();
-}
-
-async function areTokensPresent(): Promise<boolean> {
-    try {
-        const response = await fetch('http://localhost:2137/checkTokens');
-        if (!response.ok) throw new Error('Failed to check tokens');
-        const tokens = await response.json();
-        return !!tokens.token && !!tokens.refreshToken;
-    } catch (error) {
-        console.error('Error checking tokens:', error);
-        return false;
-    }
-}
-
-async function saveTokens(token: string, refreshToken: string): Promise<void> {
-    try {
-        const response = await fetch('http://localhost:2137/saveTokens', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token, refreshToken }),
-        });
-
-        if (!response.ok) throw new Error('Failed to save tokens');
-    } catch (error) {
-        console.error('Error saving tokens:', error);
-    }
-}
-
-
-
-
 
 function setDarkLightToggle() {
     const themeButton = document.getElementById('toggle-theme-button') as HTMLButtonElement;
@@ -149,8 +99,6 @@ async function navigateToSection(section: 'project' | 'task' | 'scenario') {
         section = 'project';
     }
 
-
-
     switch (section) {
         case 'project':
             ProjectModalNewButton.style.display = 'block';
@@ -166,7 +114,6 @@ async function navigateToSection(section: 'project' | 'task' | 'scenario') {
             await loadScenarios();
             break;
         case 'task':
-
             if (scenarioId <= 0) {
                 alert("No scenario selected. Please select a scenario first.");
                 ScenarioModalNewButton.style.display = 'block';
@@ -182,8 +129,6 @@ async function navigateToSection(section: 'project' | 'task' | 'scenario') {
                 await loadTasks();
                 break;
             }
-
-
     }
 }
 

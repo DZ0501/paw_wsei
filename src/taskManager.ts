@@ -132,7 +132,6 @@ document.getElementById('task-details-form')?.addEventListener('submit', async (
     const updateStartDateInputVal: string = (document.getElementById('task-details-start-date') as HTMLInputElement).value;
     const updateEndDateInputVal: string = (document.getElementById('task-details-end-date') as HTMLInputElement).value;
 
-    // Ensure date inputs are in the correct format
     const updateStartDate: Date = parseDate(updateStartDateInputVal);
     const updateEndDate: Date = parseDate(updateEndDateInputVal);
 
@@ -168,7 +167,7 @@ function parseDate(dateString: string): Date {
 
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const users = await api.getUsers(); // Call the function to get users
+        const users = await api.getUsers();
 
         if (!users) {
             throw new Error('Failed to fetch users');
@@ -192,17 +191,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 document.addEventListener("DOMContentLoaded", () => {
     const deleteButton = document.getElementById('task-details-delete');
     if (deleteButton) {
-        deleteButton.addEventListener('click', async () => { // Make the callback async
+        deleteButton.addEventListener('click', async () => {
             const currentTaskId = await api.getCurrentTaskId();
             if (currentTaskId) {
                 const confirmed = confirm("Are you sure you want to delete this task?");
                 if (confirmed) {
-                    await api.deleteTask(currentTaskId); // Await the deleteTask call
+                    await api.deleteTask(currentTaskId);
 
                     modalTaskUpdate.style.display = 'none';
                     taskListContainer.style.display = 'block';
 
-                    await loadTasks(); // Ensure loadTasks is awaited
+                    await loadTasks();
                 }
             } else {
                 alert("No task is currently selected for deletion.");

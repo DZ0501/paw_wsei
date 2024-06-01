@@ -39,7 +39,7 @@ app.post('/login', async (_req, res) => {
     const user = await db.collection('users').findOne({ username, password });
 
     if (user) {
-      console.log(`User found: ${JSON.stringify(user, null, 2)}`); // Use JSON.stringify for better readability
+      console.log(`User found: ${JSON.stringify(user, null, 2)}`); 
       const token = generateToken({ username: user.username, role: user.role }, 900); // 15 minutes
       const refreshToken = generateRefreshToken({ username: user.username, role: user.role });
 
@@ -68,7 +68,7 @@ app.post('/token', async (_req, res) => {
     jwt.verify(token, refreshTokenSecret, (err: any, user: any) => {
       if (err) return res.sendStatus(403);
 
-      const newToken = generateToken({ username: user.username, role: user.role }, exp || 900); // Default to 15 minutes
+      const newToken = generateToken({ username: user.username, role: user.role }, exp || 900); // 15 minutes
       res.status(200).send({ token: newToken });
     });
   } catch (error) {
@@ -372,7 +372,6 @@ app.put('/tasks/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    // Remove the _id field from the update data if it exists
     delete updateData._id;
 
     const result = await db.collection('tasks').updateOne(
