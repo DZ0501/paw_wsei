@@ -74,6 +74,61 @@ html {
     display: none;
 }
 
+/* NOTIFICATIONS */
+
+/* Notification bubble styles */
+.notification-bubble {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #888888;
+    color: white;
+    padding: 10px;
+    border: groove 5px darkgray;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.notification-bubble span {
+    margin-left: 5px;
+}
+
+#notification-panel {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    width: 300px;
+    max-height: 70vh;
+    background-color: #f1f1f1;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    z-index: 999;
+    display: none;
+}
+
+#notification-panel h3 {
+    margin-top: 0;
+}
+
+#notification-panel ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#notification-panel li {
+    background-color: #fff;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+#notification-panel.show {
+    display: block;
+}
+
 /* DARK MODE */
 
 #toggle-theme-button {

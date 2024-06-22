@@ -2,17 +2,22 @@ import { MongoApi } from './api/mongoApi';
 import { loadProjects } from './projectManager';
 import { loadScenarios } from './scenarioManager';
 import { loadTasks } from './taskManager';
+import { initializeUnreadNotificationCounter, initializeAllNotificationsView, initializeNotificationDialog, initializeReadAllButton } from './notifications/notificationCompontents';
 
 const api = new MongoApi
 
 document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
-
     setDarkLightToggle();
     setupNavigation();
     loadProjects();
     setupLoginForm();
+    initializeUnreadNotificationCounter();
+    initializeAllNotificationsView();
+    setNotificationToggle();
+    initializeNotificationDialog();
+    initializeReadAllButton();
 }
 
 async function setupLoginForm() {
@@ -45,7 +50,7 @@ async function setupLoginForm() {
     });
 }
 
-function setDarkLightToggle() {
+const setDarkLightToggle = () => {
     const themeButton = document.getElementById('toggle-theme-button') as HTMLButtonElement;
     themeButton.addEventListener('click', function () {
         if (document.body.classList.toggle('dark-mode')) {
@@ -54,10 +59,19 @@ function setDarkLightToggle() {
             themeButton.textContent = '🌙';
         }
     });
-
 }
 
-function setupNavigation() {
+const setNotificationToggle = () => {
+    document.getElementById('notification-bubble')?.addEventListener('click', () => {
+        const notificationPanel = document.getElementById('notification-panel');
+        if (notificationPanel) {
+            notificationPanel.classList.toggle('show');
+        }
+    });
+};
+
+
+const setupNavigation = () => {
     document.getElementById('tasklist-navigation-button')?.addEventListener('click', () => {
         navigateToSection('task');
     });

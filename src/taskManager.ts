@@ -1,7 +1,8 @@
 import { Task } from './models/task';
 import { MongoApi } from './api/mongoApi';
+import notificationService from './notifications/notificationService'; // Import notification service
 
-const api = new MongoApi;
+const api = new MongoApi();
 
 const newTaskButton = document.getElementById('task-modal-new-button') as HTMLElement;
 const modalNewTask = document.getElementById('task-modal-new') as HTMLElement;
@@ -29,7 +30,6 @@ const updateEndDateInput = document.getElementById('task-details-end-date') as H
 const updateUserSelect = document.getElementById('task-details-responsible') as HTMLSelectElement;
 
 const kanbanNavigationButton = document.getElementById('task-container-button-kanban') as HTMLButtonElement;
-
 
 function addTaskToList(task: Task) {
     const listElement = document.createElement('div');
@@ -99,6 +99,7 @@ async function filterTasks(status: 'all' | 'todo' | 'in progress' | 'done'): Pro
     }
     tasks.forEach(task => addTaskToList(task));
 }
+
 document.getElementById('task-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const scenarioId: number = await api.getCurrentScenarioId();
@@ -111,6 +112,15 @@ document.getElementById('task-form')?.addEventListener('submit', async (e) => {
     const task = new Task(Date.now(), scenarioId, parseInt(userId), nameInput.value, descriptionInput.value, priority, 'todo', parseInt(estimatedTimeInput.value), new Date());
     api.createTask(task);
     addTaskToList(task);
+
+    notificationService.send({
+        title: 'New Task Assigned',
+        message: `You have been assigned a new task: ${task.name}`,
+        date: new Date().toISOString(),
+        priority: priority,
+        read: false,
+    });
+
     nameInput.value = '';
     descriptionInput.value = '';
 });
@@ -164,7 +174,6 @@ function parseDate(dateString: string): Date {
     return new Date(year, month - 1, day, hours, minutes, seconds);
 }
 
-
 document.addEventListener("DOMContentLoaded", async () => {
     try {
         const users = await api.getUsers();
@@ -185,8 +194,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error('Error fetching users:', error);
     }
 });
-
-
 
 document.addEventListener("DOMContentLoaded", () => {
     const deleteButton = document.getElementById('task-details-delete');
@@ -210,7 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-
 newTaskButton.addEventListener('click', async () => {
     if (await api.getCurrentScenarioId() > 0) {
         modalNewTask.style.display = "block";
@@ -218,7 +224,6 @@ newTaskButton.addEventListener('click', async () => {
         alert("No scenario selected. Please select a scenario first.");
     }
 });
-
 
 updateUserSelect.addEventListener('change', async (e) => {
     const selectElement = e.target as HTMLSelectElement;
@@ -239,6 +244,20 @@ updateUserSelect.addEventListener('change', async (e) => {
 
                 try {
                     await api.updateTask(task);
+
+                    const userId = localStorage.getItem('userId');
+                    if (userId && parseInt(userId) === task.ownerId) {
+                        notificationService.send({
+                            title: 'New Task Assigned',
+                            message: `You have been assigned a new task: ${task.name}`,
+                            date: new Date().toISOString(),
+                            priority: task.priority,
+                            read: false,
+                        });
+                    }
+
+
+
                     showTaskDetails(task);
                 } catch (error) {
                     console.error('Failed to update task:', error);
@@ -250,8 +269,6 @@ updateUserSelect.addEventListener('change', async (e) => {
         console.error('The event target is null.');
     }
 });
-
-
 
 updateStatusInput.addEventListener('change', async (e) => {
     const selectElement = e.target as HTMLSelectElement;
@@ -290,7 +307,6 @@ updateStatusInput.addEventListener('change', async (e) => {
     }
 });
 
-
 function toggleModalVisibility(event: MouseEvent, modalElement: HTMLElement, shouldBeVisible: boolean) {
     if (modalElement !== null && event.target === modalElement) {
         modalElement.style.display = shouldBeVisible ? "block" : "none";
@@ -304,7 +320,6 @@ window.addEventListener('click', (e) => {
     toggleModalVisibility(e, modalNewTask, false);
     toggleModalVisibility(e, modalTaskUpdate, false);
 });
-
 
 kanbanNavigationButton.addEventListener('click', async () => {
     const kanbanContainer = document.getElementById('task-container-kanban') as HTMLElement;
@@ -348,10 +363,7 @@ kanbanNavigationButton.addEventListener('click', async () => {
     }
 });
 
-
-
 statusButtonAll.addEventListener('click', () => filterTasks('all'));
 statusButtonTodo.addEventListener('click', () => filterTasks('todo'));
 statusButtonInprogress.addEventListener('click', () => filterTasks('in progress'));
 statusButtonDone.addEventListener('click', () => filterTasks('done'));
-
